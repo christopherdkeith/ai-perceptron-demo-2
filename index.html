@@ -4,16 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perceptron Demo - Linear Classification</title>
+    <title>Perceptron Demo - 3D Plane Classification</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/7/highcharts.js"></script>
+    <script src="https://code.highcharts.com/7/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/7/highcharts-3d.js"></script>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h1>Perceptron Demo - Linear Classification</h1>
-            <a href="https://github.com/christopherdkeith/ai-perceptron-demo" class="github-link" target="_blank"
+            <h1>Perceptron Demo - 3D Plane Classification</h1>
+            <a href="https://github.com/christopherdkeith/ai-perceptron-demo-2" class="github-link" target="_blank"
                 rel="noopener noreferrer">
                 <svg height="24" width="24" viewBox="0 0 16 16" fill="currentColor">
                     <path
@@ -31,12 +33,13 @@
                 <div class="explanation">
                     <h4>Understanding the Perceptron:</h4>
                     <p><strong>In a nutshell:</strong> A perceptron is the simplest neural network, a network of just
-                        one neuron. The neuron consists of just three numbers: Weight_x, Weight_y, and Bias. In this
-                        scenario these three
-                        numbers define a line! By adjusting these numbers, the perceptron learns to position and angle a
-                        line that separates points into two groups. That's the key insight: <em>the perceptron IS the
-                            line</em>—it stores the line's definition in its weights and bias. Watch as these three
-                        numbers change during training to find the perfect line.</p>
+                        one neuron. The neuron consists of just four numbers: Weight_x, Weight_y, Weight_z, and Bias. In
+                        this
+                        3D scenario these four numbers define a plane! By adjusting these numbers, the perceptron learns
+                        to position and orient a
+                        plane that separates points into two groups. That's the key insight: <em>the perceptron IS the
+                            plane</em>—it stores the plane's definition in its weights and bias. Watch as these four
+                        numbers change during training to find the perfect plane.</p>
 
                     <p><strong>This is how AI learns:</strong> The perceptron demonstrates the core principle behind
                         most artificial intelligence. We start with random values (or zeros), check how many mistakes
@@ -48,45 +51,48 @@
 
                 <div class="explanation">
                     <h4>How it works:</h4>
-                    <p><strong>Target Line:</strong> y = mx + b (or y = mx + c) shown in red<br>
-                        Points above the line are labeled as +1 (green), below as -1 (blue).</p>
+                    <p><strong>Target Plane:</strong> z = Ax + By + C shown in red<br>
+                        Points above the plane are labeled as +1 (green), below as -1 (blue).</p>
                     <p><strong>Perceptron Learning:</strong> In each training round, the perceptron learns through these
                         steps:</p>
                     <ol style="margin: 10px 0; padding-left: 25px; font-size: 13px;">
                         <li><strong>Make predictions:</strong> For each point, the perceptron calculates (Weight_x ×
-                            x-coordinate) + (Weight_y × y-coordinate) + Bias. If the result ≥ 0, it predicts +1 (above),
+                            x-coordinate) + (Weight_y × y-coordinate) + (Weight_z × z-coordinate) + Bias. If the result
+                            ≥ 0, it predicts +1 (above),
                             otherwise -1 (below).</li>
                         <li><strong>Find mistakes:</strong> Compare the prediction with the correct answer (whether the
-                            point should be +1 or -1 based on the red target line). If they don't match, the perceptron
+                            point should be +1 or -1 based on the target plane). If they don't match, the perceptron
                             made an error.</li>
                         <li><strong>Adjust weights:</strong> When wrong, the perceptron updates its weights using: <br>
                             New Weight = Old Weight + (Learning Rate × Error × Input)<br>
-                            This nudges the decision boundary toward the correct classification.</li>
+                            This nudges the decision plane toward the correct orientation and position.</li>
                         <li><strong>Repeat:</strong> The perceptron goes through all points, making corrections until it
                             classifies everything correctly.</li>
                     </ol>
-                    <p><strong>Decision Boundary:</strong> The dashed orange line shows where the perceptron currently
-                        thinks the boundary is. Watch it move toward the red target line as training progresses!</p>
-                    <p><strong>Goal:</strong> Make the decision boundary match the target line by correctly classifying
+                    <p><strong>Decision Boundary:</strong> In 3D, the decision boundary is a plane. You can rotate the
+                        3D view
+                        by dragging with your mouse to see how the perceptron positions the plane to separate the
+                        points!</p>
+                    <p><strong>Goal:</strong> Make the decision plane match the target plane by correctly classifying
                         all points.</p>
                 </div>
 
                 <div class="explanation">
                     <h4>Getting Started:</h4>
                     <ol>
-                        <li><strong>Click "Start Training"</strong> to watch the perceptron learn. The orange dashed
-                            line (decision boundary) will adjust as it learns.</li>
-                        <li><strong>Watch the accuracy increase</strong> as the perceptron corrects its mistakes and the
-                            decision boundary moves toward the red target line.</li>
-                        <li><strong>Test the perceptron:</strong> Once training has started, click anywhere on the chart
-                            to add a test point. The perceptron will predict whether it's +1 or -1, shown as a diamond
-                            marker.</li>
+                        <li><strong>Click "Start Training"</strong> to watch the perceptron learn in 3D space.</li>
+                        <li><strong>Watch the accuracy increase</strong> as the perceptron corrects its mistakes and
+                            learns
+                            the correct plane orientation.</li>
+                        <li><strong>Rotate the view:</strong> Click and drag on the 3D chart to rotate and view from
+                            different angles.
+                            Use the "Reset Camera" button to return to the default view.</li>
                         <li><strong>Adjust the learning rate</strong> to see how it affects learning speed. Try 0.01
                             (slow and steady) vs 0.5 (fast but jumpy).</li>
-                        <li><strong>Change the target line</strong> slope and intercept to create different
+                        <li><strong>Change the target plane</strong> coefficients (A, B, C) to create different
                             classification problems.</li>
                         <li><strong>Generate new data points</strong> to see how the perceptron adapts to different
-                            point distributions.</li>
+                            point distributions in 3D space.</li>
                         <li><strong>Reset the perceptron</strong> to start learning from scratch with new random
                             weights.</li>
                     </ol>
@@ -156,6 +162,15 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">
+                            Weight (z):
+                            <span class="info-help">?
+                                <span class="tooltip">How much influence the z-coordinate has on the decision</span>
+                            </span>
+                        </span>
+                        <span class="info-value" id="weight-z">0.000</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">
                             Bias:
                             <span class="info-help">?
                                 <span class="tooltip">Shifts the decision boundary, allowing it to not pass through the
@@ -167,38 +182,48 @@
                 </div>
 
                 <div class="info-box">
-                    <h3>Target Line</h3>
+                    <h3>Target Plane</h3>
                     <div class="info-row">
-                        <label class="info-label" for="target-slope">
-                            Slope (m):
+                        <label class="info-label" for="target-a">
+                            Coefficient A:
                             <span class="info-help">?
-                                <span class="tooltip">The steepness of the target line - how much y changes per unit of
-                                    x</span>
+                                <span class="tooltip">Coefficient for the x term in the plane equation z = Ax + By +
+                                    C</span>
                             </span>
                         </label>
-                        <input type="number" class="info-input" id="target-slope" value="0.5" step="0.1"
-                            onchange="updateTargetLine()">
+                        <input type="number" class="info-input" id="target-a" value="0.5" step="0.1"
+                            onchange="updateTargetPlane()">
                     </div>
                     <div class="info-row">
-                        <label class="info-label" for="target-intercept">
-                            Intercept (b/c):
+                        <label class="info-label" for="target-b">
+                            Coefficient B:
                             <span class="info-help">?
-                                <span class="tooltip">Where the target line crosses the y-axis (when x = 0). Also called
-                                    b or c depending on region.</span>
+                                <span class="tooltip">Coefficient for the y term in the plane equation z = Ax + By +
+                                    C</span>
                             </span>
                         </label>
-                        <input type="number" class="info-input" id="target-intercept" value="0.2" step="0.1"
-                            onchange="updateTargetLine()">
+                        <input type="number" class="info-input" id="target-b" value="0.3" step="0.1"
+                            onchange="updateTargetPlane()">
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label" for="target-c">
+                            Coefficient C:
+                            <span class="info-help">?
+                                <span class="tooltip">Constant term in the plane equation z = Ax + By + C</span>
+                            </span>
+                        </label>
+                        <input type="number" class="info-input" id="target-c" value="0.2" step="0.1"
+                            onchange="updateTargetPlane()">
                     </div>
                     <div class="info-row">
                         <span class="info-label">
                             Equation:
                             <span class="info-help">?
-                                <span class="tooltip">The mathematical formula defining the target line the perceptron
+                                <span class="tooltip">The mathematical formula defining the target plane the perceptron
                                     is learning</span>
                             </span>
                         </span>
-                        <span class="info-value" id="target-equation">y = 0.5x + 0.2</span>
+                        <span class="info-value" id="target-equation">z = 0.5x + 0.3y + 0.2</span>
                     </div>
                 </div>
 
@@ -231,6 +256,7 @@
                     <button class="btn-danger" id="stop-btn" onclick="stopTraining()" disabled>Stop Training</button>
                     <button class="btn-secondary" onclick="reset()">Reset Perceptron</button>
                     <button class="btn-secondary" onclick="generateNewData()">New Data Points</button>
+                    <button class="btn-secondary" onclick="resetCamera()">Reset Camera</button>
                 </div>
             </div>
         </div>

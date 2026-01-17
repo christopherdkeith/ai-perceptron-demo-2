@@ -11,51 +11,111 @@ var isTraining = false;
 var trainingInterval;
 var learningRate = 0.1;
 
-// Target line parameters (y = mx + b)
-var targetSlope = 0.5;
-var targetIntercept = 0.2;
+// Target plane parameters (z = Ax + By + C)
+var targetA = 0.5;  // Coefficient for x
+var targetB = 0.3;  // Coefficient for y
+var targetC = 0.2;  // Constant term
 
-// Initialize the Highcharts visualization
+// Define custom polygon3d series type for Highcharts 3D
+Highcharts.seriesType('polygon3d', 'scatter3d', {
+    marker: {
+        enabled: false,
+        states: {
+            hover: {
+                enabled: false
+            }
+        }
+    },
+    stickyTracking: false,
+    tooltip: {
+        followPointer: true,
+        pointFormat: ''
+    },
+    trackByArea: true
+}, {
+    type: 'polygon',
+    getGraphPath: function() {
+        var graphPath = Highcharts.Series.prototype.getGraphPath.call(this);
+        var i = graphPath.length + 1;
+        // Close all segments
+        while (i--) {
+            if ((i === graphPath.length || graphPath[i][0] === 'M') && i > 0) {
+                graphPath.splice(i, 0, ['Z']);
+            }
+        }
+        this.areaPath = graphPath;
+        return graphPath;
+    },
+    drawGraph: function() {
+        // Hack into the fill logic in area.drawGraph
+        this.options.fillColor = this.color;
+        Highcharts.seriesTypes.area.prototype.drawGraph.call(this);
+    },
+    drawLegendSymbol: Highcharts.LegendSymbolMixin.drawRectangle,
+    drawTracker: Highcharts.Series.prototype.drawTracker,
+    setStackedPoints: Highcharts.noop
+});
+
+// Initialize the Highcharts 3D visualization
 function initChart() {
     chart = Highcharts.chart('chart-container', {
         chart: {
             type: 'scatter',
-            zoomType: 'xy',
+            options3d: {
+                enabled: true,
+                alpha: 15,      // Vertical rotation angle
+                beta: 30,       // Horizontal rotation angle
+                depth: 250,     // Z-axis depth
+                viewDistance: 5,
+                fitToPlot: false,
+                frame: {
+                    bottom: { size: 1, color: 'rgba(0,0,0,0.05)' },
+                    back: { size: 1, color: 'rgba(0,0,0,0.05)' },
+                    side: { size: 1, color: 'rgba(0,0,0,0.05)' }
+                }
+            },
+            margin: [50, 50, 50, 50],
             events: {
-                click: function(e) {
-                    // Only allow clicking if perceptron has been trained (decision boundary exists)
-                    if (weightY === 0) {
-                        alert('Please train the perceptron first before testing new points!');
-                        return;
-                    }
+                load: function() {
+                    // Enable drag to rotate
+                    var chart = this;
+                    var isDragging = false;
+                    var startX, startY;
+                    var startAlpha, startBeta;
                     
-                    // Get click coordinates relative to the chart axes
-                    var xValue = e.xAxis[0].value;
-                    var yValue = e.yAxis[0].value;
+                    // Mouse down - start dragging
+                    Highcharts.addEvent(chart.container, 'mousedown', function(e) {
+                        e.preventDefault();
+                        isDragging = true;
+                        startX = e.pageX;
+                        startY = e.pageY;
+                        startAlpha = chart.options.chart.options3d.alpha;
+                        startBeta = chart.options.chart.options3d.beta;
+                    });
                     
-                    // Calculate the CORRECT label based on target line
-                    var lineY = targetSlope * xValue + targetIntercept;
-                    var correctLabel = yValue > lineY ? 1 : -1;
+                    // Mouse move - rotate chart
+                    Highcharts.addEvent(chart.container, 'mousemove', function(e) {
+                        if (isDragging) {
+                            e.preventDefault();
+                            var dx = e.pageX - startX;
+                            var dy = e.pageY - startY;
+                            
+                            // Update rotation angles (negative dx for reversed horizontal rotation)
+                            chart.options.chart.options3d.alpha = startAlpha + dy * 0.5;
+                            chart.options.chart.options3d.beta = startBeta - dx * 0.5;
+                            chart.redraw(false);
+                        }
+                    });
                     
-                    // Make prediction using the perceptron
-                    var prediction = predict(xValue, yValue);
-                    
-                    // Determine which series to add the point to
-                    var seriesIndex;
-                    if (prediction === correctLabel) {
-                        // Correct prediction - add to green or blue diamond series
-                        seriesIndex = prediction === 1 ? 4 : 5;
-                    } else {
-                        // Wrong prediction - add to red diamond series
-                        seriesIndex = 6;
-                    }
-                    
-                    chart.series[seriesIndex].addPoint([xValue, yValue], true);
+                    // Mouse up - stop dragging
+                    Highcharts.addEvent(document, 'mouseup', function() {
+                        isDragging = false;
+                    });
                 }
             }
         },
         title: {
-            text: 'Perceptron Learning Visualisation'
+            text: '3D Perceptron Learning Visualization'
         },
         xAxis: {
             title: { text: 'X Coordinate' },
@@ -68,195 +128,80 @@ function initChart() {
             min: -1,
             max: 1
         },
+        zAxis: {
+            title: { text: 'Z Coordinate' },
+            min: -2,
+            max: 2,
+            showFirstLabel: false
+        },
         legend: {
             enabled: true
         },
         plotOptions: {
             scatter: {
                 marker: {
-                    radius: 5,
+                    radius: 4,
                     symbol: 'circle'
-                }
-            },
-            line: {
-                marker: {
+                },
+                dataLabels: {
                     enabled: false
                 }
             }
         },
         series: [
             {
-                name: 'Above Line (+1)',
+                name: 'Above Plane (+1)',
                 color: '#4CAF50',
                 data: []
             },
             {
-                name: 'Below Line (-1)',
+                name: 'Below Plane (-1)',
                 color: '#2196F3',
                 data: []
             },
             {
-                name: 'Target Line',
-                type: 'line',
-                color: '#f44336',
-                lineWidth: 2,
+                name: 'Target Plane',
+                type: 'polygon3d',
+                color: 'rgba(244, 67, 54, 0.3)',
                 data: [],
                 enableMouseTracking: false,
-                dataLabels: {
-                    enabled: true,
-                    formatter: function() {
-                        // Only show label on the middle point
-                        if (this.point.index === Math.floor(this.series.data.length / 2)) {
-                            var sign = targetIntercept >= 0 ? ' + ' : ' ';
-                            return 'Target: y = ' + targetSlope + 'x' + sign + targetIntercept;
-                        }
-                        return null;
-                    },
-                    style: {
-                        color: '#f44336',
-                        fontWeight: 'bold',
-                        fontSize: '12px',
-                        textOutline: '2px white'
-                    },
-                    y: -20
-                }
+                marker: { enabled: false },
+                lineWidth: 2,
+                borderColor: '#f44336'
             },
             {
                 name: 'Decision Boundary',
-                type: 'line',
-                color: '#FF9800',
-                lineWidth: 2,
-                dashStyle: 'Dash',
+                type: 'polygon3d',
+                color: 'rgba(255, 152, 0, 0.3)',
                 data: [],
                 enableMouseTracking: false,
-                dataLabels: {
-                    enabled: true,
-                    formatter: function() {
-                        // Only show label on the middle point and if we have valid data
-                        if (this.point.index === Math.floor(this.series.data.length / 2) && weightY !== 0) {
-                            // Calculate the equation from perceptron weights
-                            // Decision boundary: y = -(weightX * x + bias) / weightY
-                            var slope = (-weightX / weightY).toFixed(2);
-                            var intercept = (-bias / weightY).toFixed(2);
-                            var sign = intercept >= 0 ? ' + ' : ' ';
-                            return 'Perceptron: y = ' + slope + 'x' + sign + Math.abs(intercept);
-                        }
-                        return null;
-                    },
-                    style: {
-                        color: '#FF9800',
-                        fontWeight: 'bold',
-                        fontSize: '12px',
-                        textOutline: '2px white'
-                    },
-                    y: 30
-                }            },
-            {
-                name: 'Test Point (Predicted +1)',
-                color: '#4CAF50',
-                data: [],
-                marker: {
-                    symbol: 'diamond',
-                    radius: 8,
-                    lineWidth: 2,
-                    lineColor: '#000000'
-                },
-                tooltip: {
-                    pointFormatter: function() {
-                        var x = this.x;
-                        var y = this.y;
-                        var sum = (weightX * x + weightY * y + bias);
-                        var prediction = sum >= 0 ? '+1' : '-1';
-                        return '<b>Test Point</b><br/>' +
-                               'Coordinates: (' + x.toFixed(2) + ', ' + y.toFixed(2) + ')<br/>' +
-                               '<b>Calculation:</b><br/>' +
-                               '(' + weightX.toFixed(3) + ' × ' + x.toFixed(2) + ') + ' +
-                               '(' + weightY.toFixed(3) + ' × ' + y.toFixed(2) + ') + ' +
-                               bias.toFixed(3) + '<br/>' +
-                               '= ' + sum.toFixed(3) + '<br/>' +
-                               '<b>Prediction: ' + prediction + '</b> (correct)';
-                    }
-                }
-            },
-            {
-                name: 'Test Point (Predicted -1)',
-                color: '#2196F3',
-                data: [],
-                marker: {
-                    symbol: 'diamond',
-                    radius: 8,
-                    lineWidth: 2,
-                    lineColor: '#000000'
-                },
-                tooltip: {
-                    pointFormatter: function() {
-                        var x = this.x;
-                        var y = this.y;
-                        var sum = (weightX * x + weightY * y + bias);
-                        var prediction = sum >= 0 ? '+1' : '-1';
-                        return '<b>Test Point</b><br/>' +
-                               'Coordinates: (' + x.toFixed(2) + ', ' + y.toFixed(2) + ')<br/>' +
-                               '<b>Calculation:</b><br/>' +
-                               '(' + weightX.toFixed(3) + ' × ' + x.toFixed(2) + ') + ' +
-                               '(' + weightY.toFixed(3) + ' × ' + y.toFixed(2) + ') + ' +
-                               bias.toFixed(3) + '<br/>' +
-                               '= ' + sum.toFixed(3) + '<br/>' +
-                               '<b>Prediction: ' + prediction + '</b> (correct)';
-                    }
-                }
-            },
-            {
-                name: 'Test Point (WRONG)',
-                color: '#f44336',
-                data: [],
-                marker: {
-                    symbol: 'diamond',
-                    radius: 8,
-                    lineWidth: 2,
-                    lineColor: '#000000'
-                },
-                tooltip: {
-                    pointFormatter: function() {
-                        var x = this.x;
-                        var y = this.y;
-                        var sum = (weightX * x + weightY * y + bias);
-                        var prediction = sum >= 0 ? '+1' : '-1';
-                        // Calculate correct label
-                        var lineY = targetSlope * x + targetIntercept;
-                        var correctLabel = y > lineY ? '+1' : '-1';
-                        return '<b>Test Point (WRONG)</b><br/>' +
-                               'Coordinates: (' + x.toFixed(2) + ', ' + y.toFixed(2) + ')<br/>' +
-                               '<b>Calculation:</b><br/>' +
-                               '(' + weightX.toFixed(3) + ' × ' + x.toFixed(2) + ') + ' +
-                               '(' + weightY.toFixed(3) + ' × ' + y.toFixed(2) + ') + ' +
-                               bias.toFixed(3) + '<br/>' +
-                               '= ' + sum.toFixed(3) + '<br/>' +
-                               '<b>Prediction: ' + prediction + '</b><br/>' +
-                               '<span style="color: #f44336">Correct label: ' + correctLabel + '</span>';
-                    }
-                }
+                marker: { enabled: false },
+                lineWidth: 2,
+                borderColor: '#FF9800'
             }
         ]
     });
 }
 
-// Generate random training data points
+// Generate random training data points in 3D
 function generateTrainingData() {
     var numPoints = parseInt(document.getElementById('num-points').value);
     trainingData = [];
     
     for (var i = 0; i < numPoints; i++) {
-        // Random x and y between -1 and 1
+        // Random x, y, and z between -1 and 1
         var x = Math.random() * 2 - 1;
         var y = Math.random() * 2 - 1;
+        var z = Math.random() * 2 - 1;
         
-        // Calculate where the point should be relative to target line
-        var lineY = targetSlope * x + targetIntercept;
+        // Calculate where the point should be relative to target plane
+        // Target plane equation: z = Ax + By + C
+        var planeZ = targetA * x + targetB * y + targetC;
         
-        // Label: +1 if point is above the line, -1 if below
-        var label = y > lineY ? 1 : -1;
+        // Label: +1 if point is above the plane, -1 if below
+        var label = z > planeZ ? 1 : -1;
         
-        trainingData.push({ x: x, y: y, label: label });
+        trainingData.push({ x: x, y: y, z: z, label: label });
     }
     
     updateChart();
@@ -306,18 +251,29 @@ function generateNewData() {
     updateDisplay();
 }
 
-// Update target line when user changes slope or intercept
-function updateTargetLine() {
+// Reset camera to default viewing angle
+function resetCamera() {
+    if (chart && chart.options && chart.options.chart && chart.options.chart.options3d) {
+        chart.options.chart.options3d.alpha = 15;
+        chart.options.chart.options3d.beta = 30;
+        chart.redraw(false);
+    }
+}
+
+// Update target plane when user changes A, B, or C coefficients
+function updateTargetPlane() {
     stopTraining();
-    targetSlope = parseFloat(document.getElementById('target-slope').value);
-    targetIntercept = parseFloat(document.getElementById('target-intercept').value);
+    targetA = parseFloat(document.getElementById('target-a').value);
+    targetB = parseFloat(document.getElementById('target-b').value);
+    targetC = parseFloat(document.getElementById('target-c').value);
     
     // Update equation display
-    var sign = targetIntercept >= 0 ? '+' : '';
+    var signB = targetB >= 0 ? ' + ' : ' ';
+    var signC = targetC >= 0 ? ' + ' : ' ';
     document.getElementById('target-equation').textContent = 
-        'y = ' + targetSlope + 'x ' + sign + ' ' + targetIntercept;
+        'z = ' + targetA + 'x' + signB + Math.abs(targetB) + 'y' + signC + Math.abs(targetC);
     
-    // Regenerate training data with new target line
+    // Regenerate training data with new target plane
     trainingRound = 0;
     generateTrainingData();
     updateDisplay();
@@ -328,13 +284,14 @@ function updateDisplay() {
     document.getElementById('training-round').textContent = trainingRound;
     document.getElementById('weight-x').textContent = weightX.toFixed(3);
     document.getElementById('weight-y').textContent = weightY.toFixed(3);
+    document.getElementById('weight-z').textContent = weightZ.toFixed(3);
     document.getElementById('bias').textContent = bias.toFixed(3);
     
     // Calculate accuracy
     var correct = 0;
     for (var i = 0; i < trainingData.length; i++) {
         var point = trainingData[i];
-        if (predict(point.x, point.y) === point.label) {
+        if (predict(point.x, point.y, point.z) === point.label) {
             correct++;
         }
     }
@@ -346,59 +303,107 @@ function updateDisplay() {
     document.getElementById('wrong').textContent = wrong;
 }
 
-// Update chart with current data and lines
+// Generate wireframe grid for a plane given coefficients
+// Returns points for a grid of lines (simplified single-path version)
+function generatePlaneWireframe(a, b, c) {
+    var gridSize = 10;
+    var wireframeData = [];
+    
+    // Generate grid points
+    for (var i = 0; i <= gridSize; i++) {
+        for (var j = 0; j <= gridSize; j++) {
+            var x = -1 + (i / gridSize) * 2;
+            var y = -1 + (j / gridSize) * 2;
+            var z = a * x + b * y + c;
+            z = Math.max(-1, Math.min(1, z));
+            wireframeData.push([x, y, z]);
+        }
+    }
+    
+    return wireframeData;
+}
+
+// Generate decision boundary wireframe from perceptron weights
+function generateDecisionBoundaryWireframe() {
+    // Don't render if weights haven't been initialized
+    if (weightZ === 0 && weightX === 0 && weightY === 0) {
+        return [];
+    }
+    
+    // Handle degenerate case: plane is vertical (parallel to z-axis)
+    if (Math.abs(weightZ) < 0.001) {
+        return [];
+    }
+    
+    // Decision boundary: weightX*x + weightY*y + weightZ*z + bias = 0
+    // Solve for z: z = -(weightX*x + weightY*y + bias) / weightZ
+    var a = -weightX / weightZ;
+    var b = -weightY / weightZ;
+    var c = -bias / weightZ;
+    
+    return generatePlaneWireframe(a, b, c);
+}
+
+// Update chart with current 3D data
 function updateChart() {
     var abovePoints = [];
     var belowPoints = [];
     
-    // Separate points by their label
+    // Separate points by their label (3D format: [x, y, z])
     for (var i = 0; i < trainingData.length; i++) {
         var point = trainingData[i];
         if (point.label === 1) {
-            abovePoints.push([point.x, point.y]);
+            abovePoints.push([point.x, point.y, point.z]);
         } else {
-            belowPoints.push([point.x, point.y]);
+            belowPoints.push([point.x, point.y, point.z]);
         }
     }
     
-    // Calculate target line points
-    var targetLineData = [];
-    for (var x = -1; x <= 1; x += 0.1) {
-        var y = targetSlope * x + targetIntercept;
-        targetLineData.push([x, y]);
+    // Generate target plane as a polygon (4 corners defining a square)
+    var targetWireframe = [
+        [-1, -1, targetA * -1 + targetB * -1 + targetC],
+        [1, -1, targetA * 1 + targetB * -1 + targetC],
+        [1, 1, targetA * 1 + targetB * 1 + targetC],
+        [-1, 1, targetA * -1 + targetB * 1 + targetC]
+    ];
+    
+    // Generate decision boundary as a polygon
+    var decisionWireframe = [];
+    if (weightZ !== 0 && (weightX !== 0 || weightY !== 0 || bias !== 0)) {
+        var a = -weightX / weightZ;
+        var b = -weightY / weightZ;
+        var c = -bias / weightZ;
+        
+        decisionWireframe = [
+            [-1, -1, a * -1 + b * -1 + c],
+            [1, -1, a * 1 + b * -1 + c],
+            [1, 1, a * 1 + b * 1 + c],
+            [-1, 1, a * -1 + b * 1 + c]
+        ];
     }
     
-    // Calculate decision boundary from perceptron weights
-    var decisionBoundaryData = [];
-    if (weightY !== 0) {
-        // Decision boundary equation: weightX * x + weightY * y + bias = 0
-        // Solve for y: y = -(weightX * x + bias) / weightY
-        for (var x = -1; x <= 1; x += 0.1) {
-            var y = -(weightX * x + bias) / weightY;
-            decisionBoundaryData.push([x, y]);
-        }
-    }
-    
-    // Update all chart series
+    // Update all series
     chart.series[0].setData(abovePoints, false);
     chart.series[1].setData(belowPoints, false);
-    chart.series[2].setData(targetLineData, false);
-    chart.series[3].setData(decisionBoundaryData, false);
+    chart.series[2].setData(targetWireframe, false);
+    chart.series[3].setData(decisionWireframe, false);
     chart.redraw();
 }
 
 // Initialize on page load
 window.onload = function() {
-    // Read initial target line values from inputs
-    targetSlope = parseFloat(document.getElementById('target-slope').value);
-    targetIntercept = parseFloat(document.getElementById('target-intercept').value);
+    // Read initial target plane values from inputs
+    targetA = parseFloat(document.getElementById('target-a').value);
+    targetB = parseFloat(document.getElementById('target-b').value);
+    targetC = parseFloat(document.getElementById('target-c').value);
     
     initChart();
     generateTrainingData();
     updateDisplay();
     
-    // Update target line display
-    var sign = targetIntercept >= 0 ? '+' : '';
+    // Update target plane equation display
+    var signB = targetB >= 0 ? ' + ' : ' ';
+    var signC = targetC >= 0 ? ' + ' : ' ';
     document.getElementById('target-equation').textContent = 
-        'y = ' + targetSlope + 'x ' + sign + ' ' + targetIntercept;
+        'z = ' + targetA + 'x' + signB + Math.abs(targetB) + 'y' + signC + Math.abs(targetC);
 };
