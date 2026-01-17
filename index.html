@@ -32,27 +32,46 @@
 
                 <div class="explanation">
                     <h4>Understanding the Perceptron:</h4>
-                    <p><strong>In a nutshell:</strong> A perceptron is the simplest neural network, a network of just
-                        one neuron. The neuron consists of just four numbers: Weight_x, Weight_y, Weight_z, and Bias. In
-                        this
-                        3D scenario these four numbers define a plane! By adjusting these numbers, the perceptron learns
-                        to position and orient a
-                        plane that separates points into two groups. That's the key insight: <em>the perceptron IS the
-                            plane</em>—it stores the plane's definition in its weights and bias. Watch as these four
-                        numbers change during training to find the perfect plane.</p>
+                    <p><strong>In a nutshell:</strong> A perceptron is the simplest neural network—a single neuron that
+                        makes decisions based on its inputs. The key insight: <em>the perceptron IS the boundary</em>.
+                        In
+                        this 3D demo, four numbers (Weight_x, Weight_y, Weight_z, and Bias) define a plane that
+                        separates
+                        points into two groups. The neuron doesn't just use the plane—it <em>is</em> the plane, storing
+                        its definition directly in these four parameters.</p>
 
-                    <p><strong>This is how AI learns:</strong> The perceptron demonstrates the core principle behind
-                        most artificial intelligence. We start with random values (or zeros), check how many mistakes
-                        we're making, then adjust our numbers bit by bit to reduce those errors. Learning isn't
-                        magic—it's systematic trial and error: measure mistakes, tweak the numbers, repeat until errors
-                        are minimized. From simple perceptrons to complex neural networks, this is the fundamental
-                        process: <em>learning = finding the parameter values that best fit the data</em>.</p>
+                    <p><strong>Why three inputs?</strong> Real-world problems rarely involve just one or two features.
+                        Consider classifying whether a house is expensive: you'd look at square footage (x), number of
+                        bedrooms (y), and location score (z). Or diagnosing illness: temperature, heart rate, and blood
+                        pressure. Most real-world decisions depend on multiple factors working together. In fact,
+                        neurons
+                        with dozens, hundreds, or even thousands of inputs are common in modern AI. This 3D demo gives
+                        you
+                        a tangible visualization of how a neuron processes multiple inputs simultaneously—a principle
+                        that
+                        scales to any number of dimensions, though we can only visualize up to three!</p>
+
+                    <p><strong>This is how AI learns:</strong> The perceptron demonstrates the core principle behind all
+                        machine learning. We start with random values, check how many mistakes we're making, then adjust
+                        our parameters bit by bit to reduce errors. Learning isn't magic—it's systematic trial and
+                        error:
+                        measure mistakes, tweak the numbers, repeat until errors are minimized. Whether it's a simple
+                        perceptron with 3 inputs or a deep neural network with millions of parameters, the fundamental
+                        process remains the same: <em>learning = finding the parameter values that best fit the
+                            data</em>.</p>
                 </div>
 
                 <div class="explanation">
                     <h4>How it works:</h4>
                     <p><strong>Target Plane:</strong> z = Ax + By + C shown in red<br>
                         Points above the plane are labeled as +1 (green), below as -1 (blue).</p>
+                    <p><strong>Multiple Inputs, One Decision:</strong> The perceptron combines three coordinates (x, y,
+                        z)
+                        into a single decision. Each coordinate represents a different feature of your data. The weights
+                        tell the neuron how important each feature is—a large weight means that feature strongly
+                        influences
+                        the decision. This is exactly how neurons work in real AI systems: they take many inputs, weight
+                        them by importance, sum them up, and make a binary decision.</p>
                     <p><strong>Perceptron Learning:</strong> In each training round, the perceptron learns through these
                         steps:</p>
                     <ol style="margin: 10px 0; padding-left: 25px; font-size: 13px;">
@@ -65,7 +84,9 @@
                             made an error.</li>
                         <li><strong>Adjust weights:</strong> When wrong, the perceptron updates its weights using: <br>
                             New Weight = Old Weight + (Learning Rate × Error × Input)<br>
-                            This nudges the decision plane toward the correct orientation and position.</li>
+                            This nudges the decision plane toward the correct orientation and position. Each input's
+                            weight
+                            adjusts independently based on that input's value.</li>
                         <li><strong>Repeat:</strong> The perceptron goes through all points, making corrections until it
                             classifies everything correctly.</li>
                     </ol>
