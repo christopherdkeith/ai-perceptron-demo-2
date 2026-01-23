@@ -198,10 +198,10 @@ function generateTrainingData() {
         // Target plane equation: z = Ax + By + C
         var planeZ = targetA * x + targetB * y + targetC;
         
-        // Label: +1 if point is above the plane, -1 if below
-        var label = z > planeZ ? 1 : -1;
+        // Classification: +1 if point is above the plane, -1 if below
+        var classification = z > planeZ ? 1 : -1;
         
-        trainingData.push({ x: x, y: y, z: z, label: label });
+        trainingData.push({ x: x, y: y, z: z, classification: classification });
     }
     
     updateChart();
@@ -291,7 +291,7 @@ function updateDisplay() {
     var correct = 0;
     for (var i = 0; i < trainingData.length; i++) {
         var point = trainingData[i];
-        if (predict(point.x, point.y, point.z) === point.label) {
+        if (predict(point.x, point.y, point.z) === point.classification) {
             correct++;
         }
     }
@@ -349,10 +349,10 @@ function updateChart() {
     var abovePoints = [];
     var belowPoints = [];
     
-    // Separate points by their label (3D format: [x, y, z])
+    // Separate points by their classification (3D format: [x, y, z])
     for (var i = 0; i < trainingData.length; i++) {
         var point = trainingData[i];
-        if (point.label === 1) {
+        if (point.classification === 1) {
             abovePoints.push([point.x, point.y, point.z]);
         } else {
             belowPoints.push([point.x, point.y, point.z]);

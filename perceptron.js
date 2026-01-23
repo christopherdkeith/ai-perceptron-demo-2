@@ -47,7 +47,7 @@ function trainOneRound() {
         // error = 0  means we got it right (no change needed)
         // error = 2  means we predicted -1 but should be +1 (plane needs to tilt down)
         // error = -2 means we predicted +1 but should be -1 (plane needs to tilt up)
-        var error = point.label - prediction;
+        var error = point.classification - prediction;
         
         // If prediction was wrong (error != 0), update weights to correct the mistake
         if (error !== 0) {
